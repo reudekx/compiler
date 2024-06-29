@@ -1,0 +1,195 @@
+연산자 우선순위를 이용하는 비재귀 파서를 만들기로 함에 따라 문법 다시 정의
+
+
+또한 재귀적으로 정의되는 문법의 끝을 굳이 스스로 식별해야 하는가?
+
+가령, block이 여러개의 expression의 모임이라고 정의했을 때,
+
+Parse Stack에는 가령
+    [ok block do block if]
+위처럼 원소가 들어있을 것이다.
+
+이때 if는 if statement를 식별한 토큰이므로 push되지 않고 pop되었다고 치고, block을 parsing할 차례가 되었을 때
+block은 2개 이상의 expression이 올 수 있지만,
+결국 do라는 토큰이 매치되면 종료가 되어야 할 것이다.
+
+block이 확장되어 
+
+    [ok block do block expression]
+와 같이 되었을 때
+    expression을 파싱했다고 치고,
+    다시 block을 확장할텐데
+
+    이때 현재 token이 stack.top과 같은지 먼저 확인하면 된다.
+    이때 do가 등장하면 block은 더이상 확장될 수 없는 것이다.
+
+
+애초에 모든 재귀 논터미널들의 종료 조건을 Current Token == Parse Stack's Top 으로 확인 가능한 것 같다.
+
+    -> if statement의 경우 틀림.
+        if' expr 'do' block elifStmt
+
+        이 경우 block이 파싱된 뒤에 'elif'가 ParseStack에 들어있지 않음.
+        
+        따로 처리해주자.
+
+
+[문제 식별 (binary 연산자 표현식 epsilon 처리)]
+
+call이 중첩될 수 있는데 생각하지 못했다.
+또한 binary 체크를 binary에서 직접해야 할 듯.
+(그렇지 안히면 2번 체크해야 됨)
+
+expr을 다시 정의 해야 함.
+
+[문제 식별 (call 표현식 재정의)] -> 해결
+
+call 또한 연산자로 정의해야 할 수도
+
+    -> 생각을 해봤는데, 가령 호출식 같은 경우는 표현식 다음에 바로 등장하게 된다.
+    즉 표현식 사이에 어떠한 연산자가 존재하면 call 표현식이 아닌 단순한 괄호이고,
+    연산자 없이 표현식 직후 등장하게 되면 call 표현식이다.
+
+    그런데 이를 파싱 중간에 잘 확인하는 게 가능할까?
+
+    이전에 연산자가 들어있었는지 스택만 보고 알 수 있을지?
+
+    그냥 지금처럼 statement wrapper 문법을 정의하고 call 문법에서는 call이 재귀적으로 계속 호출될 수 있도록 해도 될 것 같다.
+
+    
+
+
+[또 생각난 것 (파싱 테이블 관련)]
+
+Current Token == Parse Stack's Top을 확인할 때 Nonterminal이면 확인을 할 수 없다는 단점이 있었다.
+
+가령 if statement에서 elif가 나올지 else가 나올지 ok가 나올지 모르므로 nonterminal을 스택에 삽입하게 되는데,
+그럼 중간의 block에서 확인을 할 수가 없어 추가적으로 'elif', 'else'가 등장하는지 확인을 해줘야 했다.
+
+그런데, 만약 파싱테이블이 존재하여 Nonterminal[CurrentToken]에 대한 Action이 존재하는지 체크할 수 있다면 이를 일일이 지정할 필요가 없다.
+
+
+
+
+================================================================
+
+[문법]
+
+program
+    -> scope EOF
+
+scope
+    -> block
+
+block
+    -> outmost_expr block
+    | returnStmt
+    | breakStmt
+    | ε (current token == parse stack's top 인 경우 종료)
+
+outmost_expr
+    -> expr
+
+
+expr
+    -> stmtWrapper exprTail
+    | ';'   (return 문이나 break 문에서 사용)
+
+stmtWrapper
+    -> unary stmt call
+
+exprTail
+    -> binary stmtWrapper exprTail
+    | ε
+
+stmt
+    -> '(' outmost_expr ')'
+    | 'do' scope 'ok'
+    | tableDecl
+    | letStmt
+    | ifStmt
+    | whileStmt
+    | forStmt
+    | funcDecl
+    | returnStmt
+    | breakStmt
+    | decoratorStmt
+    | identifier
+    | literal
+
+literal
+    -> string
+    | integer
+
+unary   (단항연산자 -> '-', 'not')
+    -> 단항연산자 unary
+    | ε
+
+binary  (산술기호들, '.', 'and', 'or', 'is', 'in')
+    -> 중위연산자     (중위연산자는 단항연산자와 다르게 생성하는 분법에서 존재를 확인)
+
+call
+    -> '(' argument ')' call
+    | ε
+
+argument (지역 변수는 선언할 수 없게 제약을 걸어야 할지? 아니면 scope가 열린 것으로 취급을 안 할 수도 있다. (즉 let을 통해 변수를 선언하면 함수호출식과 동일한 scope에 생성됨.))
+    -> outmost_expr argumentTail
+    | ε
+
+argumentTail
+    -> ',' outmost_expr argumentTail
+    | ε
+
+tableDecl
+    -> '{' tableBody '}'
+
+tableBody
+    -> varDecl tableBodyTail
+    | ε
+
+tableBodyTail
+    -> ',' varDecl tableBodyTail
+    | ε
+
+varDecl
+    -> identifier '=' outmost_expr
+
+letStmt
+    -> 'let' localDecl outmst_expr 
+
+localDecl
+    -> '=' (식별 후 지역 선언 연산자로 바뀜.)
+
+ifStmt
+    -> 'if' outmost_expr 'do' scope elifStmt
+
+elifStmt
+    -> 'elif' outmost_expr 'do' scope elifStmt
+    | 'else' scope 'ok'
+    | 'ok'
+
+whileStmt
+    -> 'while' outmost_expr 'do' scope 'ok'
+
+forStmt
+    -> 'for' parameter 'in' outmost_expr 'do' scope 'ok'
+
+funcDecl
+    -> 'fun' '(' parameter ')' scope 'ok'
+
+parameter
+    -> identifier parameterTail
+    | ε
+
+parameterTail
+    -> ',' identifier parameterTail
+    | ε
+
+returnStmt  (표현식 중간에 등장할 수 없도록 제한해야 함.) (block이 확장될 때만 등장 할 수 있도록 해도 될 듯.)
+    -> 'return' outmost_expr
+
+breakStmt   (returnStmt의 제약조건과 마찬가지로 설정)
+    -> 'break' outmost_expr
+
+decoratorStmt  (데코레이터 뒤에 표현식이 존재하면, 해당 표현식의 결과값이 call 될 때 decorator표현식 먼저 실행됨)
+    -> '@' outmost_expr

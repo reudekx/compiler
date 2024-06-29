@@ -1,0 +1,20 @@
+let res = fun(a, b, c)
+    if a do
+        let i = 0
+        while b do
+            i = i + 1
+            b = b - 1
+        ok
+    elif b do
+        let j = 0
+        for k in c do
+            a = 3
+            if k == 10 do
+                return 3
+            ok
+        ok
+    else
+        return 2 + 1 ** 2
+    ok
+    return
+ok

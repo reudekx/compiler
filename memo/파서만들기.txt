@@ -1,0 +1,207 @@
+[코드]
+let x = fun(a, b, c)
+    return a + b + c
+ok
+
+let res = x(1, 2, 3)
+
+[파싱]
+위 코드에 대한 파싱 과정을 순서대로 (대략) 나타내보자
+
+1. ParsingStack에 program을 집어넣음
+    [program]
+
+2. program에 대응되는 parse 함수를 호출함.
+    [EOF block]
+
+3. block에 대응되는 parse 함수를 호출함.
+    [EOF block expression]
+
+4. expression에 대응되는 parse 함수를 호출함.
+    [EOF block variableDefinition]
+
+5. variableDefinition에 대응되는 parse 함수를 호출함.
+    [EOF block expression '=' singleIdentifier 'let']
+
+        이때 Bytecode 생성을 위한 함수 또한 스택에 집어넣어야 한다.
+        (그렇지 않으면 재귀 호출을 해야 함)
+        이를 반영하면 스택은 다음과 같이 된다.
+
+        [EOF block BC_STORE expression '=' singleIdentifier 'let']
+        store Bytecode 또한 일련의 push/pop 연산으로 쪼갤 수 있을 것이다.
+        어쨌거나, 위처럼 Bytecode를 삽입하면 할당문이 resolve된 순간 Bytecode가 생성되도록 할 수 있다.
+
+        그러나 일단 파싱 과정에 대한 관찰이 용이하도록 Bytecode와 관련된 부분은 생략하도록 하자.
+
+    (이어서 진행)
+    
+    'let'이 current Token과 매치되었을테니 소모함.
+    [EOF block expression '=' singleIdentifier]
+
+6. singleIdentifier에 대응되는 parse 함수를 호출함.
+    [EOF block expresion '=' singleIdentifier]
+
+    변수명을 만났을테니 소모함.
+        추후 실행시 해당 변수명은 해싱되어 상수값으로서 ValueStack에 push 될 것이다.
+        이후 expression 또한 처리되어 하나의 결과값으로서 ValueStack에 push될 것이다.
+
+            생각해보니 결국 이를 위한 Bytecode 연산자를 정의해야 한다.
+                BC_HASH, BC_PUSH 정도가 적당할지? 나중에 다시 생각해보자.
+
+        ValueSTack = [... 변수명상수값 표현식결과값]
+
+        이때 BC_STORE 연산이 수행되면 POP을 2번 진행한 뒤
+        SymbolTable에서 '변수명상수값'에 대응되는 저장공간을 찾아 '표현식결과값'을 저장할 것이다.
+    
+
+    [EOF block expresion '=']
+
+    마찬가지로 '='도 소모
+
+    [EOF block expresion]
+
+7. expression에 대응되는 parse 함수를 호출함.
+
+    결국 [EOF block]이 남는다.
+
+    이렇게 해서 계속 파싱을 진행하면 된다.
+        (block이 끝날 수 있도록 문법을 다시 정의할 필요가 있다.)
+
+
+[파싱 테이블]
+
+LL(1) 문법이 아니기 때문에 3차원 배열로 구성해야 한다.
+혹은 벡터 2차원 배열로 하든지
+
+
+
+
+
+[구현 예정]
+
+1. 클로저가 변수를 캡처할 때 힙으로 옮겨야 함.
+
+    -> 그 후 같은 변수를 캡쳐하게 되면 힙을 가리키도록 해야 함.
+
+2. 애초에 심볼 테이블 어떻게 구현할지?
+
+    -> 해싱 이용
+
+
+3. 생각해보니 a.b.c.d ... 으로 무한히 이어지는 표현식을 파싱할 때 연산자를 미리 알 수가 없음.   
+
+    -> Bytecode 삽입 타이밍을 다시 생각해야 할 듯.
+
+
+[파싱 과정 재논의]
+
+a.b.c. = 10 을 파싱해보자
+
+물론 재귀 호출을 통해 모든 걸 LHS와 RHS 그리고 operator로 구분할 수 있긴 하다.
+
+재귀 호출을 사용하지 않고 스택만으로 해결하려면 어떻게 해야할까?
+
+가령 ValueStack에 값을 PUSH 할 때 항상 (address, value) 형식으로 PUSH 하는 것이다.
+그렇다면 할당을 위한 Bytecode가 실행될 때, 
+
+첫번째 pop()은 value로써 이용하고, 두번째 pop()은 address로써 이용할 수 있다.
+
+
+또한 결과적으로 중위 연산자를 파싱하려면
+
+연산자 우선순위 테이블이 필요하다.
+
+[결론]
+
+재귀 호출 없이 하향식 호출을 하려고 했던 것이 실수였다.
+
+그냥 단항/이항 연산자에 대한 우선순위 테이블을 유지하자
+
+또한 반복문/조건문 등의 구조에 대한 처리가 필요하다.
+
+
+[파싱 과정 최종 논의]
+
+왼쪽 연관 -> 스택에 넣을 때 top에 동일한 우선순위의 연산자가 존재하면 top을 apply한다.
+
+오른쪽 연관 -> 나중에 등장한 것을 우선순위가 더 높은 것으로 간주하고 stack에 push한다.
+
+    -> 스택에 emit 함수를 넣는다.
+
+Statement에 대한 처리
+    -> 스택에 parse 함수를 넣는다.
+
+
+식별자, 리터럴
+    -> PUSH 함수로서 바로 Bytecode를 방출한다.
+
+내 생각에는 expression과 statement를 구분해도 될 것 같다.
+
+어차피 statement는 각자 우선순위가 가장 높다.
+즉 
+
+
+예시:
+    a.b = if c == 1 do 1 else 0 ok
+
+
+    [a]
+    [.]
+
+    [a b]
+    [.]
+
+    [a.b]
+    [=]    apply .
+
+    [a.b]
+    [= ok expr else expr do expr]    push if statement
+
+
+    피연산자 / 중위 연산자 (혹은 단항 연산자?) / statement
+
+    이 3가지를 잘 구분해서 파싱하는 것이 핵심이다.
+
+    또한 statement 간에는 우선순위가 없고, 최초의 토큰으로서 식별이 되며 구조를 가지고 있기 때문에 앞에서부터 순서대로 파싱하면 된다.
+
+    그런데, statement에 대한 bytecode는 어떻게 식별할 것인가?
+
+        -> 애초에 구조 그 자체를 bytecode로 순서대로 변환하면 된다.
+
+        -> token과 expression들로 이루어져 있다. 즉 token이 그대로 bytecode들로 변환되면 된다. 
+
+            expression은 결국 value stack에 한 가지 값을 남기게 된다.
+
+
+[Expression 재정의 고민]
+
+expression이 여러개 일 때 식별을 어떻게 할 것인가.
+
+문법을 세부적으로 잘게 나눠서 식별이 되도록 할 수도 있긴 하다.
+
+그래도 간단하게 구분할 수 있으면 좋긴 할 듯...
+
+    -> 중위 연산자의 여부로 식별해도 될 듯?
+
+    물론 이경우 줄바꿈 후에 단항연산자가 등장하게 되면 중위연산자로 해석되게 된다.
+    -> 애초에 단항연산자가 표현식의 첫 부분에 등장할 일이 사실상 없다.
+    -> 또한 필요하다면 세미콜론을 명시적으로 사용할 수도 있도록 옵션으로서 제공해도 될 듯
+
+
+
+[연산자 어떻게 처리할지 최종점검]
+
+가령,
+    expr + expr * expr 같은 식을 생각해보자.
+
+    Parse Stack은 어떻게 구성될까?
+
+    expr이 처리되고 연산자만이 남을 것이다.
+
+    [+ expr]
+
+    또 다음 expr이 처리되고 연산자만이 남을 것이다.
+
+    [+ * ]
+
+    연산자를 파싱해야 될 때가 오면 파싱하면 된다.

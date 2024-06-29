@@ -1,0 +1,137 @@
+함수에서 2개 이상의 값을 반환하는 경우를 고려하지 않음.
+내부적으로는 tuple 등의 하나의 객체로 처리하도록 하고 코드 상에선 쉼표를 통해 여러 값을 반환할 수 있도록 할 것인지?
+    -> 일단 문법 정의에는 반영해놓음
+
+[문법]
+
+program
+    -> scope EOF
+
+scope
+    -> block
+
+block
+    -> topExpr blockTail
+    | returnExpr
+    | breakExpr
+    | ε
+
+blockTail
+    -> topExpr blockTail
+    | returnExpr
+    | breakExpr
+    | ε
+
+topExpr
+    -> exprStmt
+
+
+exprStmt
+    -> expr exprTail
+    | ';'   (return 문이나 break 문에서 사용)
+
+expr
+    -> unary primary call
+
+exprTail
+    -> binary expr exprTail
+    | ε
+
+primary
+    -> '(' topExpr ')'
+    | 'do' scope 'ok'
+    | tableDecl
+    | letExpr
+    | ifExpr
+    | whileExpr
+    | forExpr
+    | funcDecl
+    | returnExpr
+    | breakExpr
+    | decoratorExpr
+    | identifier
+    | literal
+
+literal
+    -> string
+    | integer
+
+unary   (단항연산자 -> '-', 'not')
+    -> 단항연산자 unary
+    | ε
+
+binary  (산술기호들, '.', 'and', 'or', 'is', 'in')
+    -> 중위연산자     (중위연산자는 단항연산자와 다르게 생성하는 분법에서 존재를 확인)
+
+call
+    -> '(' argument ')' call
+    | ε
+
+argument (지역 변수는 선언할 수 없게 제약을 걸어야 할지? 아니면 scope가 열린 것으로 취급을 안 할 수도 있다. (즉 let을 통해 변수를 선언하면 함수호출식과 동일한 scope에 생성됨.))
+    -> topExpr argumentTail
+    | ε
+
+argumentTail
+    -> ',' topExpr argumentTail
+    | ε
+
+tableDecl
+    -> '{' tableBody '}'
+
+tableBody
+    -> varDecl tableBodyTail
+    | ε
+
+tableBodyTail
+    -> ',' varDecl tableBodyTail
+    | ε
+
+varDecl
+    -> identifier '=' topExpr
+
+letExpr
+    -> 'let' localDecl topExpr 
+
+localDecl
+    -> '=' (식별 후 지역 선언 연산자로 바뀜.)
+
+ifExpr
+    -> 'if' topExpr 'do' scope elifExpr
+
+elifExpr
+    -> 'elif' topExpr 'do' scope elifExpr
+    | 'else' scope 'ok'
+    | 'ok'
+
+whileExpr
+    -> 'while' topExpr 'do' scope 'ok'
+
+forExpr
+    -> 'for' parameter 'in' topExpr 'do' scope 'ok'
+
+funcDecl
+    -> 'fun' '(' parameter ')' scope 'ok'
+
+parameter
+    -> identifier parameterTail
+    | ε
+
+parameterTail
+    -> ',' identifier parameterTail
+    | ε
+
+returnExpr  (표현식 중간에 등장할 수 없도록 제한해야 함.) (block이 확장될 때만 등장 할 수 있도록 해도 될 듯.)
+    -> 'return' topExpr returnExprTail
+
+returnExprTail
+    -> ',' topExpr returnExprTail
+    | ε
+
+breakExpr   (returnExpr의 제약조건과 마찬가지로 설정)
+    -> 'break' topExpr breakExprTail
+
+breakExprTail
+    -> ',' topExpr breakExprTail
+
+decoratorExpr  (데코레이터 뒤에 표현식이 존재하면, 해당 표현식의 결과값이 call 될 때 decorator표현식 먼저 실행됨)
+    -> '@' topExpr

@@ -1,0 +1,186 @@
+[문법]
+
+program = expression ;
+
+expression = assignment | arithmetic | comparison ;
+
+assignment = identifier "=" expression ;
+
+
+
+=======================================
+
+[논의]
+
+함수 -> 하나의 해시맵 (내부에서 선언된 지역변수들을 key - value 쌍으로 저장함. (물론 함수 종료 시 사라짐))
+클로져 -> 외부 맥락을 캡쳐함 -> '실행' 시 해당 변수의 값이 평가된다.
+
+그렇다면 함수 body는? 
+
+    함수 body = 여러 expression의 모임.
+
+상속은?
+
+    자신의 key-value 쌍들을 적절히 할당하면 그만이다.
+
+    물론 lua처럼 다양한 처리를 제공하기 위해 고민해 볼 여지가 존재함.
+
+
+함수가 통상적인 클래스처럼 쓰이게 된다면
+함수 자신을 call 하게 된다면? 내부의 선언문은 어떻게 처리되는지?
+
+    함수의 선언(내부 선언을 얘기하는 것 아님) 자체가 평가되면 하나의 hashmap 객체로 변환된다.
+    이때 유의할 점은 내부의 표현식에, 순서가 존재한다는 것이다. (당연히 표현식에는 선언문이 포함될 것이다.)
+
+    또한 함수 내부의 표현식의 scope는, 각 표현식마다 다르게 평가되어야 한다.
+
+    가령 표현식 A와 표현식 B 사이에 함수 정의문이 하나 존재한다면, A의 scope에서는 해당 함수가 존재하지 않는다.
+
+    -> 실제로 표현식이 '실행' 되는 경우 없는 변수의 값을 이용할 수는 없다. (이 경우는 당연히 오류 발생)
+
+    -> 하지만 정의할 때는, 해당 key값의 존재를 상정하고 코드를 구현할 수 있다. 런타임 오류를 반환하면 될 것이다.
+
+
+변수의 scope
+
+    outer layer를 모두 훑어볼 것인지, 상대 위치를 기반으로 훑을 수도 있게 해야할지 정해야 한다.
+
+    가장 간단한 방법은 scope 계층을 명시해서 탐색할 수 있도록 하는 것이다.
+
+    name
+        -> inner most scope 부터 순차적으로 outer most까지 전부 검사하여 탐색
+
+        -> 없으면 self가 됨.
+
+    self.name
+        -> 자기 자신 layer만 검사한다.
+
+    super.name
+        -> 부모 layer만 검사한다.
+
+    global.name
+        -> 가장 outer layer만 검사한다.
+
+    object.name
+        -> 'object' 변수의 'name' key에 대한 값을 탐색한다.
+
+
+    또한 위 self, super, global, object 들은 여러번 연결될 수 있다.
+
+
+변수 shadowing
+
+    shadowing을 어떻게 처리할 것인지?
+
+    위 방식대로 처리하면 된다. self가 필요하면 self를 붙이도록 명시
+
+
+매개변수
+
+    매개변수는 어떻게 처리해야 할까?
+    가장 우선순위가 높은 scope이며, 다른 변수와는 다르게 함수를 call할 때 주입되는 argument들을 보관하기 위해 존재한다.
+
+    다른 변수와의 구분이 필요할까?
+
+    가령 $기호를 붙여서 구분할 수도 있다.
+
+    구분을 하겠다면 그 이유는?
+
+        1. 각종 변수와 name이 빈번하게 겹치는 걸 방지할 수 있다.
+
+        2. 구분하는 게 가독성 면에서 괜찮을 수 있다.
+
+    컴파일러 입장에선?
+
+        1. 의미가 없어보인다. (가령 $ 기호가 붙든 안 붙든 어차피 fun identifier '(' {args, ...} ')' 순으로 등장하기 때문에 파싱 과정에서 $를 확인할 일이 없다.)
+
+        2. 또한 상위 layer의 parameter를 캡쳐하는 경우라면? 해당 layer에선 $를 제거해야하나? -> 오히려 복잡해질 수 있다.
+
+    따라서 구분을 안 하는 게 맞다.
+
+
+결국 정의와 실행으로 구분이 되는 건가?
+
+    가령 함수의 정의만으론 아직 hashmap이 생성되지 않음.
+    해당 함수를 실행해서 object를 생성해야 hashmap이 생성된다.
+
+    B = A()
+
+    그렇다면 위 식에서 B는 무엇인가? B() 는 어떻게 동작하는지?
+
+    예시 코드를 작성해보자.
+
+    A = fun(k)
+        self.getName = fun()
+            return super.name
+        end
+
+        self.setName = func(name)
+            super.name = name
+        end
+
+        self.name = "John"
+
+        self.age = $k
+
+        return self
+    end
+
+    B = A(20)
+
+    위 코드를 실행하면 어떻게 될까?
+        
+        먼저 B의 key, value를 살펴보자
+            B.name -> John
+            B.age -> 20
+            B.getName -> fun() return super.name end  (이때 scope는 함수 layer로 구분되므로, super는 B에 해당된다.)
+
+        그리고 B에 실제로 저장된 객체는 무엇일까?
+            self가 반환되었지만, self는 A 자체를 가리키지 않는다. 평가 후의 hashmap 객체를 가리킬 뿐이다.
+            그렇다면 hashmap의 역할을 하는 자료형이 따로 존재하는 것과 어떤 차이가 있게 되는 걸까?
+
+            self가 A의 복사본을 의미하는 것으로 간주할 수도 있다.
+    
+    A = fun(k)
+        # 생략
+
+        return (fun()
+            self.name = super.name
+            self.age = super.age
+
+
+        end)()
+
+    B = A(20)
+
+    원래 코드에서는 B에 함수 객체가 저장되었지만, 
+
+
+
+==================================================================
+
+[예시]
+
+class = fun(n)
+
+    self.fruit = fun()
+        for k, v in main do
+            print(k, v)
+        end
+    end
+
+    self.apple = 1
+
+    self.banana = 2
+
+
+    self.call
+    
+end
+
+obj = class()
+
+
+
+위 함수는 오류가 발생하지 않는다.
+f1 실행 시 f2에 대한 값이 존재하기 때문이다.

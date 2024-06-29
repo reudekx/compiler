@@ -1,0 +1,59 @@
+[개인 참고용으로 작성하고 있기 때문에 틀린 정보가 있을 수 있음에 유의]
+
+[LL 파서]
+
+epsilon
+
+    빈 문자열. 
+
+    우변에 epsilon이 포함된 심볼은 nullable이라 한다.
+
+First & Follow
+
+    First -> 문법 규칙에 따라 심볼이 전개 되었을 때 가장 먼저 오는 토큰 (하향식으로 구하다 보면 결국 Terminal이 찾아짐.)
+
+    Follow -> 심볼에 뒤따라 등장하는 토큰 (마찬가지로 결국 Terminal이 찾아진다.)
+
+
+만약 문법 규칙을 추가할 때 자동으로 Parsing Table이 구성되길 원한다면,
+주어진 규칙에 따라 First와 Follow를 구하는 함수 또한 작성해야 할 것 같다.
+
+    이때 추가된 rule이 기존 rule에 의해 구성된 Parsing Table 정보를 수정하게 되는 상황이 일어날까?
+
+    -> 아직 잘 모르겠으나 딱히 일어나지 않을 것 같다
+
+    -> 애초에 상충(기존 테이블 정보가 덮어씌워지는 경우를 규칙이 상충한다고 표현한다면..)되는 문법을 넣는다는 것 자체가 오류
+
+
+애초에 Parsing Table이 왜 필요하지? Rule 구조체에 2차원 벡터를 저장하면 되는 것 아닌가?
+
+    -> 이 경우 Token 으로 인덱싱이 불가능해짐. 물론 분기가 적으면 그리 오랜 시간이 걸리진 않겠다만.. 그래도 Table을 구성하는 게 나쁘지 않아 보임
+
+
+반대로 Parsing Table이 존재하면 Rule 배열이 전혀 필요 없음.
+
+애초에 Table에 문법에 대한 모든 정보가 들어있기 때문임.
+
+
+[Parsing Table의 인덱스]
+
+
+문법 규칙을 테이블에 저장해야 한다.
+
+# 이제부터 Parsing Talbe을 PT, Nonterminal을 NT, Terminal을 T라 하자. 
+
+PT[NT][T] = Action
+
+최초의 NT로부터 (가령 Program 이라든지) 현재 Token을 T로서 간주하여 이에 수행할 Action을 찾아야 한다.
+
+그게 또다른 Nonterminal을 반환하는 것일 수도 있고.. 
+
+
+1 + 2 * 3 + 4
+
+
+expression -> term
+
+term -> factor ( ( '-' | '+' ) factor)*
+
+factor -> number ( ( '/' | '*') number)*

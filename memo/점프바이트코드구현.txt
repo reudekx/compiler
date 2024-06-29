@@ -1,0 +1,245 @@
+일단 예전에 적었던 내용을 다시 가져온 뒤, 정보를 추가해보도록 하겠다.
+
+    [Jump 바이트코드 재논의]
+
+    더블 패스로 돌려서 Jump 위치를 지정해주려고 했는데,
+    그냥 Jump Bytecode 자체를 stack에 집어넣고 싱글 패스로 처리하면 된다.
+
+    바이트코드 예시를 위에서 다시 가져왔다.
+
+        a = 0
+        while a < 5 do
+            a += 1
+        ok
+        print(a)
+
+        먼저 위치를 알고 있다고 가정하고 Bytecode 배열을 작성해보자.
+
+        00 LOAD_CONST 0
+        01 STORE 'a'
+        02 LOAD 'a' ---------------> LOOP START  -------------- PUSH 02 (JUMP TARGET)
+        03 LOAD_CONST 5
+        04 COMP_LESS
+        05 JUMP_IF_FALSE ( ) -------> LOOP EXIT   -------------- PUSH 05 (JUMP INDEX)
+        06 LOAD 'a'
+        07 LOAD_CONST 1
+        08 ADD
+        09 STORE 'a'
+        10 JUMP  ( )  ----------------> JUMP BACK TO LOOP -------- PUSH 10 (JUMP INDEX)
+        11 OK (== LOOP END의 자리 표시자)  ------> LOOP END   --------------- PUSH 11 (JUMP TARGET)
+        12 STORE 'a'
+        13 JUMP 2
+        14 LOAD 'a'
+        15 PRINT
+        16 END
+
+    JUMP TARGET
+    [02,  11]
+    JUMP INDEX
+    [05, 10]
+
+    10에서는 02로 가야하고,
+    05에선 11로 가야한다.
+
+    언뜻 JUMP TARGET에서 FIFO로 인출해야 하는 것처럼 보일 수도 있는데
+
+    여러 JUMP 문들이 중첩되면 전체적으로는 LIFO 방식으로 처리해야 함.
+
+    애초에 2개 뿐이기 때문에 하나의 JUMP 문에 대해선 FIFO든 LIFO든 알아서 하면 됨.
+
+    가령 WHILE / FOR 문의 경우 2개의 쌍이 존재함.
+
+    -> WHILE문이 끝날 때 pop 하도록 함수를 예약하면 됨.
+        -> Symbol로 정의해서 넣어서 Action으로서 실행되도록 해야 할 듯.
+
+    IF 문은?
+
+    가령 IF ... ELIF ... ELSE 의 형태로 나타날 때,
+
+    순서대로 만약 조건을 만족하지 못한다면 다음 조건의 위치로 점프하고,
+    조건을 만족한다면 해당 조건 뒤의 블럭을 실행한 뒤 IF 문 바깥으로 JUMP 해야 한다.
+
+    마지막 ELSE의 경우 JUMP없이 그냥 끝내면 된다.
+
+    IF / ELIF / ELSE가 N개 있다고 가정하면,
+
+        IF ( ) J
+
+        JE
+        ELIF () T, J
+
+        JE
+        ELIF () T, J
+
+        JE
+        ELSE T
+
+        OK TE
+
+        J가 총 2 * (N - 1)개,
+        T가 N개 존재.
+
+        가령 N이 4일 때,
+
+        [J J J J J J]
+        [T T T T]
+
+        이때, 최초의 T를 POP해서 유지한다. (이를 T'라고 하자.)
+
+        그러면,
+
+        [J J J J J J]
+        [T T T] --- T'
+
+        J를 하나 POP해서 T'를 SET,
+        J를 하나 POP하고, T를 POP해서 SET
+            -> 이 과정을 반복하면 된다. (J가 빌 때까지 하면 된다.)
+            
+        그렇다면, IF ... ELSE ... OK 혹은 IF ... OK 같은 경우는 어떨까?
+
+        먼저 IF ... ELSE ... OK의 경우
+
+        IF ( ) J
+
+        JE
+        ELSE T
+
+        OK TE
+
+        개수는 공식에서 벗어났지만, 여전히 동일한 처리 과정을 거치게 된다.
+
+        다음으로 IF ... OK의 경우
+
+        IF () J
+
+        OK TE
+
+        마찬가지의 과정을 거치게 된다.     
+
+
+    논리 연산자의 경우에는?
+
+    AND / OR 
+
+    -> AND의 경우
+
+        A and B
+
+        JUMP_IF_ZERO A
+        JUMP_IF_ZERO B
+        
+        위의 분기문들과의 차이점이라면, JUMP 후에 
+        Value를 POP 하지 않는다는 것이다. (가령 IF문의 경우 condition으로 이용된 표현식의 결과를 check한 뒤 POP 해줘야 한다.)
+
+        다만 점프를 어디로 할 것인지?
+
+            간단히 생각해보자.
+            
+            표현식1 and 표현식2
+
+            파싱 과정 중에 and가 등장했을 때 jump 명령어를 Bytecode Stack에 집어넣어야 할 것 같아 보인다.
+            다만 Operator Stack에 대한 조작과의 순서를 잘 따져야 한다.
+
+            실제 코드를 예시로 들어 생각해보자.
+
+            let res = 1 + 2 and 3 + 4
+
+            파싱 결과는 다음과 같다.
+                6 bc_load
+                4 bc_push
+                4 bc_push
+                34 bc_add         --- +
+                4 bc_push
+                4 bc_push
+                34 bc_add         --- +
+                18 bc_and         --- and
+                17 bc_local_decl  --- =
+
+            and 토큰이 식별된 시점에, Operator Stack은 다음과 같이 구성되어 있을 것이다.
+
+            [센티널, =, +]
+
+            이때 and 연산자를 스택에 추가하게 되면, + 연산자를 pop하고 and 연산자가 삽입 될 것이다.
+
+            여기서, and 연산자의 등장으로 인해 pop된 연산자들은 and의 LHS 표현식의 연산자들이다.
+
+            따라서 해당 연산자들이 Bytecode로서 방출된 후에, JUMP_IF_ZERO 연산자를 추가해주면 된다.
+            그럼 JUMP 위치는 어디인가? -> and 연산자가 바이트코드로서 방출된 이후이다. (사실 and 연산자를 방출할 필요도 없어진다. JUMP 명령어가
+            and 연산의 역할을 수행하게 되기 때문)
+
+            또한, JUMP_IF_ZERO로 인해 JUMP 되지 않은 경우, 즉 RHS 표현식을 연산하는 경우에는
+            LHS 표현식의 결과를 POP 해줄 필요가 있다.
+            따라서 JUMP_IF_ZERO와 POP 바이트코드를 차례대로 방출해주면 된다.
+
+            결과적으로 바이트코드는 다음과 같게 구성된다.
+
+                6 bc_load
+                4 bc_push
+                4 bc_push
+                34 bc_add         --- +
+                    bc_and_jump           --- 점프
+                4 bc_push
+                4 bc_push
+                34 bc_add         --- +
+                # 18 bc_and       --- and (제거됨)
+                17 bc_local_decl  --- =   --- 점프 위치
+        
+
+    -> OR의 경우
+
+        A or B
+
+        and 연산에서는 JUMP_IF_ZERO 바이트코드를 방출했는데,
+        or 연산은 JUMP_IF_NOT_ZERO 바이트코드를 방출하면 된다. (또한 마찬가지로 POP 바이트코드도 방출)
+
+여기까지, 바이트코드를 어떻게 생성해야할지 대략적으로 생각해보았다.
+
+이제 실제 코드 구현을 위해 종합적으로 정리해보자.
+바이트코드 방출 타이밍은 빼고 최종적으로 위치를 할당하는 로직만 적도록 하겠다.
+
+    [점프 위치 할당 정리]
+
+    반목문:
+        재료:
+            INDEX 2개
+            TARGET 2개
+        동작:
+            모두 POP을 한 뒤 교차로 SET
+
+    조건문:
+        재료:
+            개수 일반화 불가
+        동작:
+            TARGET을 하나 POP해서 유지하고,
+            위에서 논의한 규칙에 따라 할당
+    
+    논리 연산자:
+        재료:
+            INDEX 1개
+            TARGET 1개
+        동작:
+            모두 POP한 뒤 SET
+
+
+이제 조건으로 사용한 표현식을 어떻게 POP할 것인지 최종적으로 정해보자.
+
+가령 반복문과 조건문의 경우에는 조건을 만족하든 하지않든 한번 확인한 표현식의 결과는 스택에서 POP을 해줘야 한다.
+
+하지만 논리연산자의 경우에는 POP은 하면 안 된다.
+
+POP을 하지 않는 것을 default로 가정해보자.
+
+JUMP_IF_... 바이트코드들은 스택의 top을 확인한 뒤 점프를 할지, 아니면 계속 진행할지를 결정하게 될 것이다.
+
+조건을 만족했을 경우를 위해서 -> JUMP_IF_... 명령어 바로 다음에 POP 연산을 추가해놓으면 된다.
+
+    다만 여기서 한가지 문제가 있다.
+
+    나머지 형식의 조건문들에는 해당하지 않지만, IF ... OK 형식일 떄 문제가 생긴다.
+    IF ... OK의 경우 조건을 만족하면, 더 이상 JUMP를 하지 않는다.
+    그렇다면 조건을 '불만족' 했을 경우의 POP 바이트코드를 넣을 수가 없다. (어디에 넣든 간에, 조건을 만족했을 때도 해당 POP을 무조건 거치게 된다.)
+
+따라서... POP을 하는 것을 default로 가정하자.
+다만 그렇다면 논리 연산자의 경우 POP을 한 뒤 PUSH를 또 해야하는가?
+    -> 이를 방지하기 위해.. 그냥 WITHOUT_POP 바이트코드를 정의하는 게 나을 것 같다.
+        -> 일단 이 방식대로 구현해보자.
