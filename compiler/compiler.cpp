@@ -8,7 +8,7 @@
 int main() {
   std::cout << "Compiler started successfully!" << std::endl;
 
-  Lexer::init("code2.txt");
+  Lexer::init("data/code.txt");
 
   Parser::init();
   const std::vector<int> &BytecodeList = Parser::parse();

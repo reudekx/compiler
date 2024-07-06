@@ -1,0 +1,3 @@
+/home/dohan/compiler/build/CMakeFiles/compiler.out.dir
+/home/dohan/compiler/build/CMakeFiles/edit_cache.dir
+/home/dohan/compiler/build/CMakeFiles/rebuild_cache.dir
