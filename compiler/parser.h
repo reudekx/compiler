@@ -6,10 +6,9 @@
 
 #include <vector>
 
-namespace Parser
-{
-    const std::vector<int>& parse();
-    extern int init();
-}
+namespace Parser {
+const std::vector<int> &parse();
+extern int init();
+} // namespace Parser
 
 #endif
