@@ -1,1 +1,0 @@
-/usr/sbin/c++ CMakeFiles/compiler.out.dir/compiler/compiler.cpp.o CMakeFiles/compiler.out.dir/compiler/enums.cpp.o CMakeFiles/compiler.out.dir/compiler/lexer.cpp.o CMakeFiles/compiler.out.dir/compiler/parser.cpp.o -o compiler.out
