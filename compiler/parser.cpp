@@ -114,37 +114,33 @@ struct OperatorProperty {
 };
 
 /*
-                tok_operator에 대해,
-                현재 Token과 ParseStack의 Top이 모두 tok_operator일 때
-                기존의 Top을 Pop하고 Bytecode로서 emit할지를 우선순위 테이블을
-   이용해 결정한다.
+  tok_operator에 대해,
+  현재 Token과 ParseStack의 Top이 모두 tok_operator일 때
+  기존의 Top을 Pop하고 Bytecode로서 emit할지를 우선순위 테이블을
+  이용해 결정한다.
 
-                생각해보니 단항 연산자를 고려 안 했다. 추가 토큰을 정의하고,
-   unary 파싱 함수에서 적절히 Stack에 삽입할 수 있게 하자. [해결함]
+  생각해보니 단항 연산자를 고려 안 했다. 추가 토큰을 정의하고,
+  unary 파싱 함수에서 적절히 Stack에 삽입할 수 있게 하자. [해결함]
 
-                또한 연산자를 처리하는 방법을 다시 생각해봐야 할 것 같다.
-                스택을 분리해야 할 수도?
-                                -> Operator Stack이 필요하다.
-                                Parse Stack에서 연산자가 파싱될 때 PUSH/POP을
-   하고, 또한 하나의 Expr이 파싱 완료될 때 남은 스택을 모조리 POP 한다.
-                                                -> parseBlock에서 하나의 outmost
-   expression이 끝났을 때 진행하면 된다. (혹은 outmost expression이 시작되기 전)
+  또한 연산자를 처리하는 방법을 다시 생각해봐야 할 것 같다.
+  스택을 분리해야 할 수도?
+  -> Operator Stack이 필요하다.
+  Parse Stack에서 연산자가 파싱될 때 PUSH/POP을
+  하고, 또한 하나의 Expr이 파싱 완료될 때 남은 스택을 모조리 POP 한다.
+  -> parseBlock에서 하나의 outmost
+  expression이 끝났을 때 진행하면 된다. (혹은 outmost expression이 시작되기 전)
 
-                                                다만 소괄호 등에 의해 우선순위가
-   변경된 것이 잘 식별될까? 혹은 또다른 statement로 구분이 되었을 수도 있고
+  다만 소괄호 등에 의해 우선순위가
+  변경된 것이 잘 식별될까? 혹은 또다른 statement로 구분이 되었을 수도 있고
+    -> 자리 표시자를 넣어야 할 듯.
 
-                                                                -> 자리 표시자를
-   넣어야 할 듯.
+    -> 결국에는 scope가 변하는 모든 곳에 scope를 삽입해야 할지?
+    -> 다만 소괄호에 의해서는 scope가 열리면 안 된다.
+    -> 따로 처리를 해야 함.
 
-                                                                -> 결국에는
-   scope가 변하는 모든 곳에 scope를 삽입해야 할지?
-
-                                                                                -> 다만 소괄호에 의해서는 scope가 열리면 안 된다.
-                                                                                                -> 따로 처리를 해야 함.
-
-                                                                                                -> 결론:
-                                                                                                                Scope가 열릴 때도 sentinal token을 삽입하고,
-                                                                                                                소괄호가 열릴 때도 sentinal token을 삽입한다.
+    -> 결론:
+      Scope가 열릴 때도 sentinal token을 삽입하고,
+      소괄호가 열릴 때도 sentinal token을 삽입한다.
 
 */
 OperatorProperty OperatorTable[tok_length];
