@@ -9,8 +9,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SRCS
     src/compiler.cpp
-    src/lexer.cpp
     src/parser.cpp
+    src/lexer.cpp
+    src/tokenizer.cpp
+    src/scanner.cpp
     src/token.cpp
 )
 

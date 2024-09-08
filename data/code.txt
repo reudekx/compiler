@@ -1,0 +1,21 @@
+import math
+
+const MAX i32 = 10
+
+var x i32 = 100
+
+var message string = "Hello, World!"
+
+fun factorial(k i32) i32 {
+    if (k == 1) {
+        return k
+    }
+    return k * factorial(k - 1)
+}
+
+fun main() {
+    var fact i32 = factorial(x)
+
+    print(fact)
+    print(message)
+}
