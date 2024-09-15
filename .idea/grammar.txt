@@ -1,0 +1,81 @@
+file ->
+	[ import-stmt ] global-decls
+
+import-stmt ->
+	"import" "{" [ module { "," module } ] "}"
+	
+global-decls ->
+	{ global-decl }
+	
+global-decl ->
+	"const" global-const-decl
+	"var" global-var-decl
+	"struct" named-struct-def
+	"func" named-func-def
+	
+global-const-decl ->
+	id type '=' constexpr
+	
+global-var-decl ->
+	id type '=' constexpr // 순환 참조를 막기 위해 일단 초기 버전은 이렇게 구현
+	
+named-struct-def ->
+	id struct-def-body
+	
+struct-def-body ->
+	"{" { id type } "}"
+	
+type ->
+	"struct" struct-def-body
+	"func" func-type
+	array-type
+	named-type
+	
+func-type ->
+	"(" [ type { "," type } ] ")"  반환타입
+	
+array-type ->
+	"[" type ";" number "]"
+	
+named-func-def ->
+	id func-head scope
+	
+func-head ->
+	"(" { id [ "," id ] } ")"
+	
+scope ->
+	"{" { statement } "}"
+	
+statement ->
+	"const" local-const-decl
+	"var" local-var-decl
+	"if" scope [ { "elif" scope } "else" scope ]
+	"while" scope
+	scope
+	expr-stmt 
+	
+expr-stmt ->
+	expr
+
+expr ->
+	atomic-expr { binary atomic-expr }
+	
+atomic-expr ->
+	{ unary } primary { call | index }
+	
+unary ->
+	단항연산자
+	
+binary ->
+	이항연산자
+
+primary-expr ->
+	id
+	literal
+	"(" expr ")"
+	
+call ->
+	"(" [ expr { "," expr } ] ")"
+	
+index ->
+	"[" expr "]"

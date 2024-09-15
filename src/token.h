@@ -1,6 +1,8 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+#include <cstdio>
+
 #define BASICS \
     TOK(PART, "#part") \
     TOK(ERROR, "#error") \
@@ -83,6 +85,10 @@ public:
     }
 
     static Type check_type(char ch, bool init = false);
+
+    inline void print() {
+        printf("[%02d:%02d] Token: %s, Literal: %s\n", line, column, Token::to_string(type), literal);
+    }
 
     // 필드
     Type type = Type::ERROR;

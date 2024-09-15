@@ -26,7 +26,7 @@ int main() {
     Token token = tokenizer.advance();
 
     while (token.type != Token::Type::ENDOFFILE) {
-        printf("Token: %s, Literal: %s\n", Token::to_string(token.type), token.literal);
+        token.print();
         token = tokenizer.advance();
     }
 

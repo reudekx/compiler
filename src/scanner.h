@@ -17,7 +17,7 @@ private:
     Buffer buffer;
     char cur_char;
 public:
-    int line = 0;
+    int line = 1;
     int column = 1;
 
     Scanner(FILE* file) : file(file) {
