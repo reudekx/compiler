@@ -33,11 +33,7 @@ private:
 public:
     Tokenizer(FILE* file) : scanner(file) {}
 
-    inline const Token& peek() {
-        return cur_token;
-    }
-
-    const Token& advance();
+    const Token& tokenize();
 
 };
 

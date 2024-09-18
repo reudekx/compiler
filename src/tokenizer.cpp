@@ -129,7 +129,7 @@ void Tokenizer::tokenize_symbol() {
     cur_token.length = 0;
 }
 
-const Token& Tokenizer::advance() {
+const Token& Tokenizer::tokenize() {
     while(true) {
         if (isspace(scanner.peek())) {
             consume_space();

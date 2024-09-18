@@ -23,11 +23,11 @@ int main() {
 
     Tokenizer tokenizer(file);
 
-    Token token = tokenizer.advance();
+    Token token = tokenizer.tokenize();
 
     while (token.type != Token::Type::ENDOFFILE) {
         token.print();
-        token = tokenizer.advance();
+        token = tokenizer.tokenize();
     }
 
     return 0;
