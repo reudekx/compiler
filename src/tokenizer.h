@@ -1,6 +1,8 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
+#include <string>
+
 #include "scanner.h"
 #include "token.h"
 
@@ -19,7 +21,7 @@ private:
 
     void init_lexeme();
     void build_lexeme();
-    char* get_literal();
+    std::string get_literal();
 
     void consume_space();
     void consume_comment();

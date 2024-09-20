@@ -2,6 +2,7 @@
 #define TOKEN_H
 
 #include <cstdio>
+#include <string>
 
 #define BASICS \
     TOK(PART, "#part") \
@@ -87,14 +88,14 @@ public:
     static Type check_type(char ch, bool init = false);
 
     inline void print() {
-        printf("[%02d:%02d] Token: %s, Literal: %s\n", line, column, Token::to_string(type), literal);
+        printf("[%02d:%02d] Token: %s, Literal: %s\n", line, column, Token::to_string(type), literal.c_str());
     }
 
     // 필드
     Type type = Type::ERROR;
     int line = 0;
     int column = 0;
-    char* literal = nullptr;
+    std::string literal;
     int length = 0;
     const char* message = nullptr;
 

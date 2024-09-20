@@ -17,21 +17,19 @@ private:
     Tokenizer tokenizer;
 
     Token tokens[2];
-    int cur_token_index = 0;
+    int cur_index = 1;
+    int next_index = 0;
 public:
-    Lexer(FILE* file) : file(file), tokenizer(file) {
+    Lexer(FILE* file);
 
+    Token advance();
+
+    inline Token peek() {
+        return tokens[cur_index];
     }
 
-    inline Token get_token() {
-        int index = cur_token_index;
-        cur_token_index = (cur_token_index + 1) % 2;
-        tokens[cur_token_index] = tokenizer.tokenize();
-        return tokens[index]
-    }
-
-    inline Token peek_token() {
-        return cur_token;
+    inline Token ahead() {
+        return tokens[next_index];
     }
 
 };

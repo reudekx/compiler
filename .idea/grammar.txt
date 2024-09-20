@@ -52,7 +52,17 @@ statement ->
 	"if" scope [ { "elif" scope } "else" scope ]
 	"while" scope
 	scope
-	expr-stmt 
+	expr-stmt
+	assignment
+
+local-const-decl ->
+	id type [ '=' expression ]
+
+local-var-decl ->
+	id type [ '=' expression ]
+
+assignment ->
+	expr '=' expr
 	
 expr-stmt ->
 	expr

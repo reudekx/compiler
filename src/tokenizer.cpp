@@ -14,10 +14,8 @@ void Tokenizer::build_lexeme() {
     lexeme.length++;
 }
 
-char* Tokenizer::get_literal() {
-    char* literal = (char*)malloc(sizeof(char) * lexeme.length);
-    memcpy(literal, lexeme.data, lexeme.length);
-    return literal;
+std::string Tokenizer::get_literal() {
+    return std::string(lexeme.data, lexeme.length);
 }
 
 // 공백임이 앞서 식별됨.
@@ -91,7 +89,7 @@ void Tokenizer::tokenize_keyword() {
         cur_token.length = lexeme.length;
     }
     else {
-        cur_token.literal = nullptr;
+        cur_token.literal = "";
         cur_token.length = 0;
     }
 
@@ -99,11 +97,12 @@ void Tokenizer::tokenize_keyword() {
 }
 
 // EOF가 앞서 식별됨.
+// 구현 편의성을 위해 EOF 문자를 소모하지 않음.
 void Tokenizer::tokenize_eof() {
     cur_token.type = Token::Type::ENDOFFILE;
     cur_token.line = scanner.line;
     cur_token.column = scanner.column;
-    cur_token.literal = nullptr;
+    cur_token.literal = "";
     cur_token.length = 0;
 }
 
@@ -125,7 +124,7 @@ void Tokenizer::tokenize_symbol() {
     }
     
     cur_token.type = token_type;
-    cur_token.literal = nullptr;
+    cur_token.literal = "";
     cur_token.length = 0;
 }
 

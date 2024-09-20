@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstdio>
 
-int main() {
+void compile() {
     const char *file_name = "../data/code.txt";
 
     FILE *file = fopen(file_name, "rb");
@@ -14,21 +14,21 @@ int main() {
         perror("Cannot open file");
     }
 
-    // Scanner scanner = Scanner(file);
+    int i = 0;
 
-    // while (scanner.peek() != EOF) {
-    //     printf("Line: %d, Column: %d, Char: %c\n", scanner.line, scanner.column, scanner.peek());
-    //     scanner.consume();
-    // }
+    Lexer lexer(file);
 
-    Tokenizer tokenizer(file);
-
-    Token token = tokenizer.tokenize();
-
-    while (token.type != Token::Type::ENDOFFILE) {
-        token.print();
-        token = tokenizer.tokenize();
+    while (lexer.peek().type != Token::Type::ENDOFFILE) {
+        std::cout << ++i << ") ";
+        lexer.peek().print();
+        lexer.advance();
     }
+
+    fclose(file);
+}
+
+int main() {
+    compile();
 
     return 0;
 }   
