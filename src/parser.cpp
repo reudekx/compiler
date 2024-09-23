@@ -1,25 +1,34 @@
 #include "parser.h"
 
+namespace {
+
 class ParseError : public std::runtime_error {
 public:
     ParseError(const std::string& message) : std::runtime_error(message) {}
 };
 
-inline AST::NODE make_node() {
-    return std::make_unique<AST::Node>();
+template<typename T>
+std::pair<AST::NODE, T*> make_node() {
+    auto node = std::make_unique<AST::Node>();
+    node->data = (AST::Data*)malloc(sizeof(T));
+    return { std::move(node), (T*)node->data };
 }
 
+};
 
 Parser::Parser(Lexer *lexer) : lexer(lexer) {
 
 }
 
-// 소모는 따로 할지.. 고민해야겠다. 해당 토큰을 반환할 필요도 있을 수 있기 떄문에
-void Parser::expect(Token::Type type, const char * const message = "Unexpected Token") {
+AST::TOKEN Parser::take_token() {
+    return std::make_unique<Token>(lexer->peek());
+}
+
+// 토큰의 소모는 따로 처리한다.
+void Parser::expect(Token::Type type, const char * const message) {
     if (!lexer->match(type)) {
         throw ParseError(message);
     }
-    lexer->advance();
 }
 
 /*
@@ -50,18 +59,22 @@ AST::NODE parse_empty() {
 
 // 항상 최초에 호출됨
 AST::NODE Parser::parse_file() {
-    auto node = make_node();
-    auto& file = node->data.emplace<AST::File>();
+    auto [node, file] = make_node<AST::File>();
     if (lexer->match(Token::Type::IMPORT)) {
-        file.import_stmt = parse_empty();
+        file->import_stmt = parse_empty();
     }
-    file.global = parse_empty();
+    file->global = parse_empty();
     return node;
 }
 
 AST::NODE Parser::parse_import_stmt() {
+    auto [node, import_stmt] = make_node<AST::ImportStmt>();
     lexer->advance();
     expect(Token::Type::LBRACE);
-    auto node = make_node();
+    return node;
+}
+
+AST::NODE Parser::parse_global() {
+    auto [node, global] = make_node<AST::Global>();
     return node;
 }

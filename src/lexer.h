@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <cstdio>
+#include <memory>
 
 #define BUFFER_SIZE 128
 #define LEXEME_SIZE 128
@@ -24,19 +25,19 @@ public:
 
     Token advance();
 
-    inline Token peek() {
+    inline const Token& peek() const {
         return tokens[cur_index];
     }
 
-    inline Token ahead() {
+    inline const Token& ahead() const {
         return tokens[next_index];
     }
 
-    inline bool match(Token::Type type) {
+    inline bool match(Token::Type type) const {
         return peek().type == type;
     }
 
-    inline bool match_ahead(Token::Type type) {
+    inline bool match_ahead(Token::Type type) const {
         return ahead().type == type;
     }
 

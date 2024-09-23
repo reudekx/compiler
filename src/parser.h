@@ -16,6 +16,9 @@ private:
 
     AST::NODE parse_file();
     AST::NODE parse_import_stmt();
+    AST::NODE parse_global();
+
+    AST::TOKEN take_token();
 
     void expect(Token::Type type, const char * const message = "Unexpected Token");
 

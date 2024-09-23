@@ -1,11 +1,12 @@
 #include "token.h"
 #include "lexer.h"
 #include "tokenizer.h"
+#include "parser.h"
 
 #include <iostream>
 #include <cstdio>
 
-void compile() {
+void test_lexer() {
     const char *file_name = "../data/code.txt";
 
     FILE *file = fopen(file_name, "rb");
@@ -29,8 +30,24 @@ void compile() {
     fclose(file);
 }
 
+void test_parser() {
+    const char *file_name = "../data/code.txt";
+
+    FILE *file = fopen(file_name, "rb");
+
+    if (!file) {
+        perror("Cannot open file");
+    }
+
+    Lexer lexer(file);
+
+    Parser parser(&lexer);
+
+    parser.parse();
+}
+
 int main() {
-    compile();
+    test_parser();
 
     return 0;
 }   

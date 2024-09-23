@@ -4,12 +4,42 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include <iostream>
 
 #include "token.h"
 
+#define PARENS ()
+
+#define APPLY(...) APPLY2(APPLY2(APPLY2(__VA_ARGS__)))
+#define APPLY2(...) APPLY3(APPLY3(APPLY3(__VA_ARGS__)))
+#define APPLY3(...) __VA_ARGS__
+
+#define REPEAT(macro, ...) \
+    __VA_OPT__(APPLY(PAIR(macro, __VA_ARGS__)))
+
+#define PAIR(macro, a, b, ...) \
+    macro(a, b) \
+    __VA_OPT__(AGAIN PARENS (macro, __VA_ARGS__))
+
+#define AGAIN() PAIR
+
+#define DEF_MEMBER(type, name) type name;
+
+#define DEF_PRINT(type, name) print_child(name, indent);
+
+
+#define AST_DATA(name, ...) \
+    struct name : Data { \
+        REPEAT(DEF_MEMBER, __VA_ARGS__) \
+        void print(int indent) const override { \
+            REPEAT(DEF_PRINT, __VA_ARGS__) \
+        } \
+    }; \
+    
+
 /*
 
-중간에 메타 구조체를 정의할 필요성이 있는지 생각해보자..
+중간에 메타 구조체를 정의할 필요가 있는지 생각해보자..
 가령 GlobalDecl 구조체는 필요할까?
 GlobalDecl에는 전역 const, var, struct, funcion에 대한 정의가 뒤따른다.
 어차피 File 노드에서 parse_global_decls 함수를 호출해서 파싱하면 되긴 한다.
@@ -37,130 +67,74 @@ using TOKEN = std::unique_ptr<Token>;
 using NODE_LIST = std::vector<std::unique_ptr<Node>>;
 using TOKEN_LIST = std::vector<std::unique_ptr<Token>>;
 
-struct Base {};
+struct Data {
+    virtual void print(int indent = 0) const {
+        std::cout << std::string(indent, ' ') << "Data" << std::endl;
+    }
 
-struct File : Base {
-    NODE import_stmt;
-    NODE global;
+    virtual ~Data() = default;
 };
-
-struct Global {
-    NODE_LIST stmts;
-};
-
-struct ImportStmt : Base {
-    TOKEN_LIST modules;
-};
-
-struct ConstDecl : Base {
-    TOKEN name;
-    NODE type;
-    TOKEN value;
-};
-
-struct VarDecl : Base {
-    TOKEN name;
-    NODE type;
-    NODE value;
-};
-
-struct StructDef : Base {
-    TOKEN name;
-    TOKEN_LIST member_names;
-    NODE_LIST member_types;
-};
-
-struct FunDef : Base {
-    TOKEN name;
-    TOKEN_LIST param_names;
-    NODE_LIST param_types;
-    NODE return_type;
-    NODE_LIST scope; 
-};
-
-struct NamedType : Base {
-    TOKEN name;
-};
-
-struct ArrayType : Base {
-    NODE type;
-    TOKEN length;
-};
-
-struct FunType : Base {
-    NODE_LIST param_types;
-    NODE return_type;
-};
-
-struct Identifier : Base {
-    TOKEN id;
-};
-
-struct Literal : Base {
-    TOKEN value;
-};
-
-struct StructLiteral : Base {
-    NODE_LIST values;
-};
-
-struct ArrayLiteral : Base {
-    NODE_LIST values;
-};
-
-struct Indexing : Base {
-    NODE index;
-};
-
-struct ParenExpr : Base {
-    NODE expr;
-};
-
-struct Call : Base {
-    NODE_LIST args;
-};
-
-struct AtomicExpr : Base {
-    TOKEN_LIST unarys; // Unary operator
-    NODE primary_expr; // literal, identifier, paren expr
-    NODE_LIST suffixes; // Indxing or Call
-};
-
-struct Expr : Base {
-    Token binary;
-    NODE left;
-    NODE right;
-};
-
-struct ExprStmt : Base {
-    NODE expr;
-};
-
-struct Scope : Base {
-    NODE_LIST stmts;
-};
-
-struct IfStmt : Base {
-    NODE_LIST conds;
-    NODE_LIST scopes;
-};
-
-struct WhileStmt : Base {
-    NODE cond;
-    NODE scope;
-};
-
-using Data = std::variant<
-    File, Global, ImportStmt, ConstDecl, VarDecl, StructDef, FunDef,
-    NamedType, ArrayType, FunType, Identifier, Literal,
-    StructLiteral, ArrayLiteral, Indexing, ParenExpr, Call,
-    AtomicExpr, Expr, ExprStmt, Scope, IfStmt, WhileStmt
->;
 
 class Node {
 public:
-    Data data;
+    Data* data;
+
+    ~Node() {
+        free(data);
+    }
 };
+
+static void print_indent(int indent) {
+    for (int i = 0; i < indent; i++) {
+        std::cout << "\t";  //
+    }
+}
+
+static void print_child(const NODE& node, int indent) {
+    node->data->print(indent + 1);
+}
+
+static void print_child(const TOKEN& token, int indent) {
+    print_indent(indent);
+    token->print();
+}
+
+static void print_child(const NODE_LIST& nodes, int indent) {
+    for (const auto& node : nodes) {
+        node->data->print(indent + 1);
+    }
+}
+
+static void print_child(const TOKEN_LIST& tokens, int indent) {
+    for (const auto& token : tokens) {
+        print_indent(indent);
+        token->print();
+    }
+}
+
+AST_DATA(File, NODE, import_stmt, NODE, global)
+AST_DATA(Global, NODE_LIST, stmts)
+AST_DATA(ImportStmt, TOKEN_LIST, modules)
+AST_DATA(ConstDecl, TOKEN, name, NODE, type, TOKEN, value)
+AST_DATA(VarDecl, TOKEN, name, NODE, type, NODE, value)
+AST_DATA(StructDef, TOKEN, name, TOKEN_LIST, member_names, NODE_LIST, member_types)
+AST_DATA(FunDef, TOKEN, name, TOKEN_LIST, param_names, NODE_LIST, param_types, NODE, return_type, NODE_LIST, scope)
+AST_DATA(NamedType, TOKEN, name)
+AST_DATA(ArrayType, NODE, type, TOKEN, length)
+AST_DATA(FunType, NODE_LIST, param_types, NODE, return_type)
+AST_DATA(Identifier, TOKEN, id)
+AST_DATA(Literal, TOKEN, value)
+AST_DATA(StructLiteral, NODE_LIST, values)
+AST_DATA(ArrayLiteral, NODE_LIST, values)
+AST_DATA(Indexing, NODE, index)
+AST_DATA(ParenExpr, NODE, expr)
+AST_DATA(Call, NODE_LIST, args)
+AST_DATA(AtomicExpr, TOKEN_LIST, unarys, NODE, primary_expr, NODE_LIST, suffixes)
+AST_DATA(Expr, TOKEN, binary, NODE, left, NODE, right)
+AST_DATA(ExprStmt, NODE, expr)
+AST_DATA(Scope, NODE_LIST, stmts)
+AST_DATA(IfStmt, NODE_LIST, conds, NODE_LIST, scopes)
+AST_DATA(WhileStmt, NODE, cond, NODE, scope)
 
 };
 

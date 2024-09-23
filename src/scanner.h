@@ -22,7 +22,7 @@ public:
 
     Scanner(FILE* file);
 
-    inline char peek() {
+    inline char peek() const {
         return cur_char;
     }
 
