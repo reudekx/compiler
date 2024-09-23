@@ -32,6 +32,14 @@ public:
         return tokens[next_index];
     }
 
+    inline bool match(Token::Type type) {
+        return peek().type == type;
+    }
+
+    inline bool match_ahead(Token::Type type) {
+        return ahead().type == type;
+    }
+
 };
 
 #endif

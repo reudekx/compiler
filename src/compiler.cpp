@@ -18,7 +18,7 @@ void compile() {
 
     Lexer lexer(file);
 
-    while (lexer.peek().type != Token::Type::ENDOFFILE && lexer.peek().type != Token::Type::ERROR) {
+    while (!lexer.match(Token::Type::ENDOFFILE) && !lexer.match(Token::Type::ERROR)) {
         std::cout << ++i << ") ";
         lexer.peek().print();
         lexer.advance();

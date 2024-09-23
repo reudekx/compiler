@@ -22,121 +22,136 @@ GlobalDecl에는 전역 const, var, struct, funcion에 대한 정의가 뒤따�
 ParenExpr 같은 경우에는?
 단순히 Expr을 캡슐화하는 용도긴 한데.. 일단 따로 정의한 뒤 나중에 필요 없으면 제거하자.
 
+======
+
+즉 AST 구성 단계에서 노드의 의미를 구체화할지, 이후 의미 분석 단계에서 구조를 보고 노드의 의미를 파악할지 적절히 정해서 구현해야 함.
+
 */
 
 namespace AST {
 
+class Node;
+
+using NODE = std::unique_ptr<Node>;
+using TOKEN = std::unique_ptr<Token>;
+using NODE_LIST = std::vector<std::unique_ptr<Node>>;
+using TOKEN_LIST = std::vector<std::unique_ptr<Token>>;
+
 struct Base {};
 
 struct File : Base {
-    std::unique_ptr<Node> import_stmt;
-    std::vector<std::unique_ptr<Node>> global_decls;
+    NODE import_stmt;
+    NODE global;
+};
+
+struct Global {
+    NODE_LIST stmts;
 };
 
 struct ImportStmt : Base {
-    std::vector<std::unique_ptr<Token>> modules;
+    TOKEN_LIST modules;
 };
 
 struct ConstDecl : Base {
-    std::unique_ptr<Token> name;
-    std::unique_ptr<Node> type;
-    std::unique_ptr<Token> value;
+    TOKEN name;
+    NODE type;
+    TOKEN value;
 };
 
 struct VarDecl : Base {
-    std::unique_ptr<Token> name;
-    std::unique_ptr<Node> type;
-    std::unique_ptr<Node> value;
+    TOKEN name;
+    NODE type;
+    NODE value;
 };
 
 struct StructDef : Base {
-    std::unique_ptr<Token> name;
-    std::vector<std::unique_ptr<Token>> member_names;
-    std::vector<std::unique_ptr<Node>> member_types;
+    TOKEN name;
+    TOKEN_LIST member_names;
+    NODE_LIST member_types;
 };
 
 struct FunDef : Base {
-    std::unique_ptr<Token> name;
-    std::vector<std::unique_ptr<Token>> param_names;
-    std::vector<std::unique_ptr<Node>> param_types;
-    std::unique_ptr<Node> return_type;
-    std::vector<std::unique_ptr<Node>> scope; 
+    TOKEN name;
+    TOKEN_LIST param_names;
+    NODE_LIST param_types;
+    NODE return_type;
+    NODE_LIST scope; 
 };
 
 struct NamedType : Base {
-    std::unique_ptr<Token> name;
+    TOKEN name;
 };
 
 struct ArrayType : Base {
-    std::unique_ptr<Node> type;
-    std::unique_ptr<Token> length;
+    NODE type;
+    TOKEN length;
 };
 
 struct FunType : Base {
-    std::vector<std::unique_ptr<Node>> param_types;
-    std::unique_ptr<Node> return_type;
+    NODE_LIST param_types;
+    NODE return_type;
 };
 
 struct Identifier : Base {
-    std::unique_ptr<Token> id;
+    TOKEN id;
 };
 
 struct Literal : Base {
-    std::unique_ptr<Token> value;
+    TOKEN value;
 };
 
 struct StructLiteral : Base {
-    std::unique_ptr<Node> values;
+    NODE_LIST values;
 };
 
 struct ArrayLiteral : Base {
-    std::unique_ptr<Node> values;
+    NODE_LIST values;
 };
 
 struct Indexing : Base {
-    std::unique_ptr<Node> index;
+    NODE index;
 };
 
 struct ParenExpr : Base {
-    std::unique_ptr<Node> expr;
+    NODE expr;
 };
 
 struct Call : Base {
-    std::unique_ptr<Node> args;
+    NODE_LIST args;
 };
 
 struct AtomicExpr : Base {
-    std::vector<std::unique_ptr<Token>> unarys; // Unary operator
-    std::unique_ptr<Node> primary_expr; // literal, identifier, paren expr
-    std::unique_ptr<Node> suffixes; // Indxing or Call
+    TOKEN_LIST unarys; // Unary operator
+    NODE primary_expr; // literal, identifier, paren expr
+    NODE_LIST suffixes; // Indxing or Call
 };
 
 struct Expr : Base {
     Token binary;
-    std::unique_ptr<Node> left;
-    std::unique_ptr<Node> right;
+    NODE left;
+    NODE right;
 };
 
 struct ExprStmt : Base {
-    std::unique_ptr<Node> expr;
+    NODE expr;
 };
 
 struct Scope : Base {
-    std::vector<std::unique_ptr<Node>> stmts;
+    NODE_LIST stmts;
 };
 
 struct IfStmt : Base {
-    std::vector<std::unique_ptr<Node>> conds;
-    std::vector<std::unique_ptr<Node>> scopes;
+    NODE_LIST conds;
+    NODE_LIST scopes;
 };
 
 struct WhileStmt : Base {
-    std::unique_ptr<Node> cond;
-    std::unique_ptr<Node> scope;
+    NODE cond;
+    NODE scope;
 };
 
 using Data = std::variant<
-    File, ImportStmt, ConstDecl, VarDecl, StructDef, FunDef,
+    File, Global, ImportStmt, ConstDecl, VarDecl, StructDef, FunDef,
     NamedType, ArrayType, FunType, Identifier, Literal,
     StructLiteral, ArrayLiteral, Indexing, ParenExpr, Call,
     AtomicExpr, Expr, ExprStmt, Scope, IfStmt, WhileStmt
