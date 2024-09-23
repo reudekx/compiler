@@ -14,11 +14,11 @@ Scanner::Scanner(FILE* file) : file(file) {
 char Scanner::consume() {
     buffer.index++;
     if (cur_char == '\n') {
-        line = 0;
-        column++;
+        column = 1;
+        line++;
     } 
     else {
-        line++;
+        column++;
     }
 
     if (buffer.index == buffer.size) {

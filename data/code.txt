@@ -13,6 +13,20 @@ fun factorial(k i32) i32 {
     return k * factorial(k - 1)
 }
 
+var fun_var (i32) i32 = factorial
+
+var array [i32; 5]
+
+var 2d_array [[i32; 3]; 2] = [
+    [1, 2, 3], [4, 5, 6]
+]
+
+struct Person {
+    name string
+    age i32
+}
+
+
 fun main() {
     var fact i32 = factorial(x)
 

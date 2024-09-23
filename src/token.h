@@ -32,6 +32,7 @@
     TOK(RBRACKET, "]") \
     TOK(COMMA, ",") \
     TOK(DOT, ".") \
+    TOK(SEMICOLON, ";") \
     TOK(symbol_end, "#symbol_end") \
 
 #define KEYWORDS \

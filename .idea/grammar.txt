@@ -41,7 +41,7 @@ named-func-def ->
 	id func-head scope
 	
 func-head ->
-	"(" { id [ "," id ] } ")"
+	"(" { id type [ "," id type ] } ")"
 	
 scope ->
 	"{" { statement } "}"

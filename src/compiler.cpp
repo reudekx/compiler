@@ -18,11 +18,13 @@ void compile() {
 
     Lexer lexer(file);
 
-    while (lexer.peek().type != Token::Type::ENDOFFILE) {
+    while (lexer.peek().type != Token::Type::ENDOFFILE && lexer.peek().type != Token::Type::ERROR) {
         std::cout << ++i << ") ";
         lexer.peek().print();
         lexer.advance();
     }
+    
+    lexer.peek().print();
 
     fclose(file);
 }
