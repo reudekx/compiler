@@ -49,17 +49,19 @@ void test_parser() {
 
     std::cout << "========== Parse End!! ==========" << std::endl;
 
+    if (parser.has_error()) {
+        std::cout << parser.error_message() << std::endl;
+        parser.error_token().print();
+        return;
+    }
+
     const AST::Node* ast = parser.ast();
 
-    std::cout << parser.result_message() << std::endl;
-
     ast->data->print();
-
-    
 }
 
 int main() {
-    test_lexer();
+    // test_lexer();
     test_parser();
 
     return 0;

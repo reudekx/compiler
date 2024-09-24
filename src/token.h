@@ -3,6 +3,8 @@
 
 #include <cstdio>
 #include <string>
+#include <format>
+#include <iostream>
 
 #define BASICS \
     TOK(PART, "#part") \
@@ -82,14 +84,18 @@ public:
 
     static void print_trie();
 
-    inline static const char* to_string(Type token_type) {
+    inline static const char* type_to_str(Type token_type) {
         return String[(int)token_type];
     }
 
     static Type check_type(char ch, bool init = false);
 
+    inline std::string to_str() const {
+        return std::format("[{:02d}:{:02d}] Token: {}, Literal: {}", line, column, Token::type_to_str(type), literal);
+    }
+
     inline void print() const {
-        printf("[%02d:%02d] Token: %s, Literal: %s\n", line, column, Token::to_string(type), literal.c_str());
+        std::cout << to_str() << std::endl;
     }
 
     // 필드

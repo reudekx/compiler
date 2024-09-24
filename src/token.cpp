@@ -86,7 +86,7 @@ void print_sub_trie(const TrieNode* node, int depth) {
     for (int i = 0; i < depth; i++) std::cout << "  ";
     std::cout << "'" << node->ch << "' ";
     if (node->type != Token::Type::IDENTIFIER) {
-        std::cout << "(" << Token::to_string(node->type) << ")";
+        std::cout << "(" << Token::type_to_str(node->type) << ")";
     }
     std::cout << std::endl;
 

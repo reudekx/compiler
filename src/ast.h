@@ -27,7 +27,7 @@
 
 #define DEF_PRINT(type, name) \
     print_space(space + 1); \
-    std::cout << "% " << #name << std::endl; \
+    std::cout << "• " << #name << std::endl; \
     print_child(name, space); \
 
 
@@ -132,7 +132,7 @@ AST_DATA(ImportStmt, TOKEN_LIST, modules)
 AST_DATA(ConstDecl, TOKEN, name, NODE, type, TOKEN, value)
 AST_DATA(VarDecl, TOKEN, name, NODE, type, NODE, value)
 AST_DATA(StructDef, TOKEN, name, TOKEN_LIST, member_names, NODE_LIST, member_types)
-AST_DATA(FunDef, TOKEN, name, TOKEN_LIST, param_names, NODE_LIST, param_types, NODE, return_type, NODE_LIST, scope)
+AST_DATA(FunDef, TOKEN, name, TOKEN_LIST, param_names, NODE_LIST, param_types, NODE, return_type, NODE, scope)
 AST_DATA(NamedType, TOKEN, name)
 AST_DATA(ArrayType, NODE, type, TOKEN, length)
 AST_DATA(FunType, NODE_LIST, param_types, NODE, return_type)

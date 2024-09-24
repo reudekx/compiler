@@ -1,5 +1,14 @@
 import { math module1 module2 }
 
-var f fun(i32, i32) i32
+var function fun(i32, i32) i32
 
 const MAX i32
+
+var array [i32; 5]
+
+var _2d_array [[i32; 5]; 4]
+
+struct Person {
+    name string
+    age i32
+}

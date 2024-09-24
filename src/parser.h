@@ -12,7 +12,9 @@ class Parser {
 private:
     Lexer* lexer;
     std::unique_ptr<AST::Node> m_ast;
-    const char* m_result_message;
+    bool m_has_error = false;
+    const char* m_error_message;
+    Token m_error_token;
 
     inline const bool match(Token::Type type) const {
         return lexer->peek().type == type;
@@ -50,6 +52,21 @@ private:
     AST::NODE parse_array_type();
     AST::NODE parse_fun_type();
 
+    AST::NODE parse_identifier();
+    AST::NODE parse_literal();
+    AST::NODE parse_struct_literal();
+    AST::NODE parse_array_literal();
+    AST::NODE parse_indexing();
+    AST::NODE parse_call();
+    AST::NODE parse_paren_expr();
+
+    AST::NODE parse_atomic_expr();
+    AST::NODE parse_expr();
+    AST::NODE parse_expr_stmt();
+    AST::NODE parse_if_stmt();
+    AST::NODE parse_while_stmt();
+    AST::NODE parse_scope();
+
 public:
     Parser(Lexer *lexer);
 
@@ -59,8 +76,16 @@ public:
         return m_ast.get();
     };
 
-    inline const char* const result_message() const {
-        return m_result_message;
+    inline const bool has_error() const {
+        return m_has_error;
+    }
+
+    inline const char* const error_message() const {
+        return m_error_message;
+    }
+
+    inline const Token& error_token() {
+        return m_error_token;
     }
 
 };

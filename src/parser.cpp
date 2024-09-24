@@ -25,13 +25,13 @@ Parser::Parser(Lexer *lexer) : lexer(lexer) {
 // 토큰의 소모는 따로 처리한다.
 void Parser::expect(Token::Type type) {
     if (!match(type)) {
-        const std::string message = std::format("Expected type: {} / but got: {}", Token::to_string(type), Token::to_string(lexer->peek().type));
+        const std::string message = std::format("Expected type: {} / but got: {}", Token::type_to_str(type), Token::type_to_str(lexer->peek().type));
         throw ParseError(message);
     }
 }
 
 void Parser::unexpect(Token::Type type) {
-    const std::string message = std::format("Got unexpected type: {}", Token::to_string(type));
+    const std::string message = std::format("Got unexpected type: {}", Token::type_to_str(type));
     throw ParseError(message);
 }
 
@@ -69,16 +69,18 @@ AST::TOKEN Parser::take(Token::Type type) {
 
 void Parser::parse() {
     try {
-        m_result_message = "Parse completed.";
         m_ast = parse_file();
     }
     catch(const ParseError &e) {
-        m_result_message = e.what();
+        m_has_error = true;
+        m_error_message = e.what();
+        m_error_token = lexer->peek();
     }
 }
 
 
-// 코드 완성 정 IDE 오류 표시 방지용 임시 함수
+// 코드 완성 전 IDE 오류 표시 방지용 임시 함수
+// 반복문 이후 return 값으로 사용해도 됨.
 AST::NODE parse_empty() {
     auto [node, data] = make_node<AST::Data>();
     return node;
@@ -162,6 +164,12 @@ AST::NODE Parser::parse_struct_def() {
     auto [node, struct_def] = make_node<AST::StructDef>();
     advance(); // "struct"
     struct_def->name = take(Token::Type::IDENTIFIER);
+    consume(Token::Type::LBRACE);
+    while (!match(Token::Type::RBRACE)) {
+        struct_def->member_names.emplace_back(take(Token::Type::IDENTIFIER));
+        struct_def->member_types.emplace_back(parse_type());
+    }
+    advance(); // "}"
     return node;
 }
 
@@ -169,11 +177,29 @@ AST::NODE Parser::parse_fun_def() {
     auto [node, fun_def] = make_node<AST::FunDef>();
     advance(); // "fun"
     fun_def->name = take(Token::Type::IDENTIFIER);
+    consume(Token::Type::LPAREN);
+    if (match(Token::Type::RPAREN)) {
+        advance();
+    }
+    else {
+        while (true) {
+            fun_def->param_names.emplace_back(take(Token::Type::IDENTIFIER));
+            fun_def->param_types.emplace_back(parse_type());
+            if (match(Token::Type::RPAREN)) {
+                advance();
+                break;
+            }
+            consume(Token::Type::COMMA);
+        }
+    }
+    fun_def->return_type = parse_type();
+    consume(Token::Type::LBRACE);
+    fun_def->scope = parse_scope();
     return node;
 }
 
 AST::NODE Parser::parse_type() {
-    switch(type()) {
+    switch (type()) {
         case Token::Type::IDENTIFIER:
             return parse_named_type();
             break;
@@ -202,6 +228,7 @@ AST::NODE Parser::parse_array_type() {
     array_type->type = parse_type();
     consume(Token::Type::SEMICOLON);
     array_type->length = take(Token::Type::INTEGER);
+    consume(Token::Type::RBRACKET);
     return node;
 }
 
@@ -224,4 +251,131 @@ AST::NODE Parser::parse_fun_type() {
     }
     fun_type->return_type = parse_type();
     return node;
+}
+
+AST::NODE Parser::parse_identifier() {
+    auto [node, identifier] = make_node<AST::Identifier>();
+    identifier->id = take();
+    return node;
+}
+
+AST::NODE Parser::parse_literal() {
+    auto [node, literal] = make_node<AST::Literal>();
+    literal->value = take();
+    return node;
+}
+
+AST::NODE Parser::parse_struct_literal() {
+    auto [node, struct_literal] = make_node<AST::StructLiteral>();
+    advance(); // "{"
+    if (match(Token::Type::RBRACE)) {
+        advance();
+    }
+    else {
+        while (true) {
+            struct_literal->values.emplace_back(parse_expr());
+            if (match(Token::Type::RBRACE)) {
+                advance();
+                break;
+            }
+            consume(Token::Type::COMMA);
+        }
+    }
+    return node;
+}
+
+AST::NODE Parser::parse_array_literal() {
+    auto [node, array_literal] = make_node<AST::ArrayLiteral>();
+    advance(); // "["
+    if (match(Token::Type::RBRACKET)) {
+        advance();
+    }
+    else {
+        while (true) {
+            array_literal->values.emplace_back(parse_expr());
+            if (match(Token::Type::RBRACKET)) {
+                advance();
+                break;
+            }
+            consume(Token::Type::COMMA);
+        }
+    }
+    return node;
+}
+
+AST::NODE Parser::parse_indexing() {
+    auto [node, indexing] = make_node<AST::Indexing>();
+    advance(); // "["
+    indexing->index = parse_expr();
+    consume(Token::Type::RBRACKET);
+    return node;
+}
+
+AST::NODE Parser::parse_call() {
+    auto [node, call] = make_node<AST::Call>();
+    advance(); // "("
+    if (match(Token::Type::RPAREN)) {
+        advance();
+    }
+    else {
+        while (true) {
+            call->args.emplace_back(parse_expr());
+            if (match(Token::Type::RPAREN)) {
+                advance();
+                break;
+            }
+            consume(Token::Type::COMMA);
+        }
+    }
+    return node;
+}
+
+AST::NODE Parser::parse_paren_expr() {
+    auto [node, paren_expr] = make_node<AST::ParenExpr>();
+    advance(); // "("
+    paren_expr->expr = parse_expr();
+    consume(Token::Type::RPAREN);
+    return node;
+}
+
+AST::NODE Parser::parse_atomic_expr() {
+    auto [node, atomic_expr] = make_node<AST::AtomicExpr>();
+
+    // unary 파싱 코드 필요
+
+    switch (type()) {
+        case Token::Type::IDENTIFIER:
+            atomic_expr->primary_expr = parse_identifier();
+            break;
+        case Token::Type::INTEGER:
+            atomic_expr->primary_expr = parse_literal();
+            break;
+        case Token::Type::STRING:
+            atomic_expr->primary_expr = parse_literal();
+            break;
+        case Token::Type::LPAREN:
+            atomic_expr->primary_expr = parse_paren_expr();
+            break;
+        case Token::Type::LBRACE:
+            atomic_expr->primary_expr = parse_struct_literal();
+            break;
+        case Token::Type::LBRACKET:
+            atomic_expr->primary_expr = parse_array_literal();
+            break;
+    }
+}
+
+AST::NODE Parser::parse_expr() {
+}
+
+AST::NODE Parser::parse_expr_stmt() {
+}
+
+AST::NODE Parser::parse_if_stmt() {
+}
+
+AST::NODE Parser::parse_while_stmt() {
+}
+
+AST::NODE Parser::parse_scope() {
 }
