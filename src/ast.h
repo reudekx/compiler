@@ -25,13 +25,21 @@
 
 #define DEF_MEMBER(type, name) type name;
 
-#define DEF_PRINT(type, name) print_child(name, indent);
+#define DEF_PRINT(type, name) \
+    print_space(space + 1); \
+    std::cout << "% " << #name << std::endl; \
+    print_child(name, space); \
 
 
 #define AST_DATA(name, ...) \
     struct name : Data { \
         REPEAT(DEF_MEMBER, __VA_ARGS__) \
-        void print(int indent) const override { \
+        const char* const label() const override { \
+            return #name; \
+        } \
+        void print(int space) const override { \
+            print_space(space); \
+            std::cout << "<" << #name << ">" << std::endl; \
             REPEAT(DEF_PRINT, __VA_ARGS__) \
         } \
     }; \
@@ -68,8 +76,12 @@ using NODE_LIST = std::vector<std::unique_ptr<Node>>;
 using TOKEN_LIST = std::vector<std::unique_ptr<Token>>;
 
 struct Data {
-    virtual void print(int indent = 0) const {
-        std::cout << std::string(indent, ' ') << "Data" << std::endl;
+    virtual const char* const label() const {
+        return "Data";
+    }
+
+    virtual void print(int space = 0) const {
+        std::cout << std::string(space, ' ') << "Data" << std::endl;
     }
 
     virtual ~Data() = default;
@@ -84,30 +96,32 @@ public:
     }
 };
 
-static void print_indent(int indent) {
-    for (int i = 0; i < indent; i++) {
-        std::cout << "\t";  //
+static void print_space(int space) {
+    for (int i = 0; i < space; i++) {
+        std::cout << " ";
     }
 }
 
-static void print_child(const NODE& node, int indent) {
-    node->data->print(indent + 1);
+static void print_child(const NODE& node, int space) {
+    if (!node) return;
+    node->data->print(space + 4);
 }
 
-static void print_child(const TOKEN& token, int indent) {
-    print_indent(indent);
+static void print_child(const TOKEN& token, int space) {
+    if (!token) return;
+    print_space(space + 4);
     token->print();
 }
 
-static void print_child(const NODE_LIST& nodes, int indent) {
+static void print_child(const NODE_LIST& nodes, int space) {
     for (const auto& node : nodes) {
-        node->data->print(indent + 1);
+        node->data->print(space + 4);
     }
 }
 
-static void print_child(const TOKEN_LIST& tokens, int indent) {
+static void print_child(const TOKEN_LIST& tokens, int space) {
     for (const auto& token : tokens) {
-        print_indent(indent);
+        print_space(space + 4);
         token->print();
     }
 }

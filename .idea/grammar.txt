@@ -1,8 +1,12 @@
+[] -> 0 ~ 1개
+{} -> 0개 이상
+
+
 file ->
 	[ import-stmt ] global-decls
 
 import-stmt ->
-	"import" "{" [ module { "," module } ] "}"
+	"import" "{" { module } "}"
 	
 global-decls ->
 	{ global-decl }
@@ -11,7 +15,7 @@ global-decl ->
 	"const" global-const-decl
 	"var" global-var-decl
 	"struct" named-struct-def
-	"func" named-func-def
+	"fun" named-fun-def
 	
 global-const-decl ->
 	id type '=' constexpr
@@ -27,20 +31,20 @@ struct-def-body ->
 	
 type ->
 	"struct" struct-def-body
-	"func" func-type
+	"fun" fun-type
 	array-type
 	named-type
 	
-func-type ->
+fun-type ->
 	"(" [ type { "," type } ] ")"  반환타입
 	
 array-type ->
 	"[" type ";" number "]"
 	
-named-func-def ->
-	id func-head scope
+named-fun-def ->
+	id fun-head scope
 	
-func-head ->
+fun-head ->
 	"(" { id type [ "," id type ] } ")"
 	
 scope ->

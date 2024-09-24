@@ -1,35 +1,5 @@
-import math
+import { math module1 module2 }
 
-const MAX i32 = 10
+var f fun(i32, i32) i32
 
-var x i32 = 100
-
-var message string = "Hello, World!"
-
-fun factorial(k i32) i32 {
-    if (k == 1) {
-        return k
-    }
-    return k * factorial(k - 1)
-}
-
-var fun_var (i32) i32 = factorial
-
-var array [i32; 5]
-
-var 2d_array [[i32; 3]; 2] = [
-    [1, 2, 3], [4, 5, 6]
-]
-
-struct Person {
-    name string
-    age i32
-}
-
-
-fun main() {
-    var fact i32 = factorial(x)
-
-    print(fact)
-    print(message)
-}
+const MAX i32

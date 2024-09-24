@@ -84,6 +84,10 @@ void Tokenizer::tokenize_keyword() {
         scanner.consume();
     }
 
+    if (token_type == Token::Type::PART) {
+        token_type = Token::Type::IDENTIFIER;
+    }
+
     if (token_type == Token::Type::IDENTIFIER) {
         cur_token.literal = get_literal();
         cur_token.length = lexeme.length;

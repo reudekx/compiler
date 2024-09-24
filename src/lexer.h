@@ -33,14 +33,6 @@ public:
         return tokens[next_index];
     }
 
-    inline bool match(Token::Type type) const {
-        return peek().type == type;
-    }
-
-    inline bool match_ahead(Token::Type type) const {
-        return ahead().type == type;
-    }
-
 };
 
 #endif

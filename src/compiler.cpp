@@ -19,7 +19,7 @@ void test_lexer() {
 
     Lexer lexer(file);
 
-    while (!lexer.match(Token::Type::ENDOFFILE) && !lexer.match(Token::Type::ERROR)) {
+    while (lexer.peek().type != Token::Type::ENDOFFILE && lexer.peek().type != Token::Type::ERROR) {
         std::cout << ++i << ") ";
         lexer.peek().print();
         lexer.advance();
@@ -43,10 +43,23 @@ void test_parser() {
 
     Parser parser(&lexer);
 
+    std::cout << "========== Parse Start ==========" << std::endl;
+
     parser.parse();
+
+    std::cout << "========== Parse End!! ==========" << std::endl;
+
+    const AST::Node* ast = parser.ast();
+
+    std::cout << parser.result_message() << std::endl;
+
+    ast->data->print();
+
+    
 }
 
 int main() {
+    test_lexer();
     test_parser();
 
     return 0;
