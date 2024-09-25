@@ -330,6 +330,13 @@ AST::NODE Parser::parse_call() {
     return node;
 }
 
+AST::NODE Parser::parse_member() {
+    auto [node, member] = make_node<AST::Member>();
+    advance(); // "."
+    member->name = take(Token::Type::IDENTIFIER);
+    return node;
+}
+
 AST::NODE Parser::parse_paren_expr() {
     auto [node, paren_expr] = make_node<AST::ParenExpr>();
     advance(); // "("
@@ -361,6 +368,23 @@ AST::NODE Parser::parse_atomic_expr() {
             break;
         case Token::Type::LBRACKET:
             atomic_expr->primary_expr = parse_array_literal();
+            break;
+        default:
+            unexpect(type());
+            break;
+    }
+
+    switch (type()) {
+        case Token::Type::LBRACKET:
+            atomic_expr->suffixes.emplace_back(parse_indexing());
+            break;
+        case Token::Type::LPAREN:
+            atomic_expr->suffixes.emplace_back(parse_call());
+            break;
+        case Token::Type::DOT:
+            atomic_expr->suffixes.emplace_back(parse_member());
+            break;
+        default:
             break;
     }
 }

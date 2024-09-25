@@ -58,6 +58,7 @@ private:
     AST::NODE parse_array_literal();
     AST::NODE parse_indexing();
     AST::NODE parse_call();
+    AST::NODE parse_member();
     AST::NODE parse_paren_expr();
 
     AST::NODE parse_atomic_expr();

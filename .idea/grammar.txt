@@ -75,7 +75,7 @@ expr ->
 	atomic-expr { binary atomic-expr }
 	
 atomic-expr ->
-	{ unary } primary { call | index }
+	{ unary } primary-expr { call | index | member }
 	
 unary ->
 	단항연산자
@@ -93,3 +93,6 @@ call ->
 	
 index ->
 	"[" expr "]"
+
+member ->
+	"." expr
