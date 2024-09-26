@@ -25,6 +25,7 @@
     TOK(MINUS, "-") \
     TOK(STAR, "*") \
     TOK(SLASH, "/") \
+    TOK(AMPERSANCE, "&") \
     TOK(EQ_EQ, "==") \
     TOK(LPAREN, "(") \
     TOK(RPAREN, ")") \
