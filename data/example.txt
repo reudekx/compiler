@@ -28,6 +28,10 @@ struct Person {
     age i32
 }
 
+trait Movable {
+    void move()
+}
+
 
 fun main() {
     var fact i32 = factorial(x)
