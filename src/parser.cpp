@@ -115,8 +115,8 @@ AST::NODE Parser::parse_global() {
             case Token::Type::CONST:
                 global->stmts.emplace_back(parse_const_decl());
                 break;
-            case Token::Type::VAR:
-                global->stmts.emplace_back(parse_var_decl());
+            case Token::Type::STATIC:
+                global->stmts.emplace_back(parse_static_decl());
                 break;
             case Token::Type::STRUCT:
                 global->stmts.emplace_back(parse_struct_def());
@@ -141,6 +141,18 @@ AST::NODE Parser::parse_const_decl() {
     advance(); // "const"
     const_decl->name = take(Token::Type::IDENTIFIER);
     const_decl->type = parse_type();
+    if (match(Token::Type::EQ)) {
+        advance();
+        // parse_expr
+    }
+    return node;
+}
+
+AST::NODE Parser::parse_static_decl() {
+    auto [node, static_decl] = make_node<AST::StaticDecl>();
+    advance(); // "static"
+    static_decl->name = take(Token::Type::IDENTIFIER);
+    static_decl->type = parse_type();
     if (match(Token::Type::EQ)) {
         advance();
         // parse_expr

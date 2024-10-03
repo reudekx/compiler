@@ -44,6 +44,7 @@ private:
     AST::NODE parse_import_stmt();
     AST::NODE parse_global();
     AST::NODE parse_const_decl();
+    AST::NODE parse_static_decl();
     AST::NODE parse_var_decl();
     AST::NODE parse_struct_def();
     AST::NODE parse_fun_def();

@@ -50,6 +50,7 @@
     TOK(ELSE, "else") \
     TOK(VAR, "var") \
     TOK(CONST, "const") \
+    TOK(STATIC, "static") \
     TOK(FUN, "fun") \
     TOK(STRUCT, "struct") \
     TOK(TRAIT, "trait") \
