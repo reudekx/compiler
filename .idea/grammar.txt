@@ -13,14 +13,14 @@ global-decls ->
 	
 global-decl ->
 	"const" global-const-decl
-	"var" global-var-decl
+	"static" global-static-decl
 	"struct" named-struct-def
 	"fun" named-fun-def
 	
 global-const-decl ->
 	id type '=' constexpr
 	
-global-var-decl ->
+global-static-decl ->
 	id type '=' constexpr // 순환 참조를 막기 위해 일단 초기 버전은 이렇게 구현
 	
 named-struct-def ->
