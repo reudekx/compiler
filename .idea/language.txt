@@ -127,3 +127,4 @@
         generics의 경우 정적 디스패치가 수행된다.
         
         impl Trait의 경우에도 정적 디스패치가 수행된다.
+        -> Rust의 impl은 결국 단일 trait bound를 지닌 generics와 동일하다..(아마도?) 사실상의 syntactic sugar이라고 봐도 될 듯
