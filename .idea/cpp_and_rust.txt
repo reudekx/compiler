@@ -97,16 +97,79 @@ C++의 lvalue, prvalue, xvalue, glvalue, rvalue
         물론 형변환이 이뤄져야 하니까.. std::move가 그 역할을 해준다.
 
         Object object = static_cast<Object&&>(Object());
+        // Object object = (Object&&)Object();
 
         Object object = std::move(Object());
 
         위 둘은 동일한 기능을 수행하는 듯하다. (검증 필요)
 
+    그렇다면 Obejct&&와 같은 rvalue reference가 type으로서 명시되는 경우는?
+        1. 함수 파라미터
+        2. 캐스팅 (lvalue를 xvalue로 형변환)
+
+        가령 Object&& object = Object(); 같은 코드를 작성해도 의미가 없다.
+        왜냐하면 결국 object는 이후의 코드에서 lvalue로서 작동할 것이기 때문이다. (즉 object는 type이 rvalue reference인 lvalue..)
+
+    const Object& object = Object();
+
+        lvalue reference에 const 키워드를 붙임으로써 prvalue를 바인딩할 수 있다.
+        이유는? -> 일관성 있는 코드 작성을 위해 prvalue를 읽기 전용으로만 참조할 수 있도록 한 듯
+
+        생각해보니 복사 생성자의 파라미터 타입도 const Object& 이다.
+
+        
+
 C++의 copy elision
 
     복사 생략이 언제 이뤄지는지 알아보자.
 
-    1. 
+    1. prvalue semantics (보장된 복사 생략)
+
+        NRVO는 어떨까?
+
+        가령
+
+        Object get_object(bool k) { 
+            Object obj1;
+            Object obj2;
+
+            if (k) return obj1;
+        
+            return obj2;
+        }
+
+        Object o = get_object(true);
+
+        위의 경우를 자세히 따져보자.
+
+            일단 get_object 함수 내부를 보자.
+            이 함수가 컴파일 되면, return 값이 스택 공간이든 레지스터든 어딘가에 저장되는 형태로 반환될 것이다.
+            이때 NRVO가 이뤄지면, 애초에 이 스택 공간 혹은 레지스터가 지역 변수로 이용될 것이고, 
+            결국 지역 변수 -> 반환값 변수로의 복사/이동이 이뤄지지 않을 것이다.
+
+            다만 위 경우에는 분기문으로 여러 변수 중 하나를 반환하도록 되어 있으므로, 
+            컴파일 시점에 함수 내부에서 어떤 게 반환될지 결정할 수 없다.
+
+            따라서 런타임에 조건에 따라 반환값 스택 공간 혹은 레지스터로의 복사/이동이 이뤄질 것이고, NRVO는 이뤄지지 않게 된다.
+
+            그러나, 그렇다고 외부에서 함수 호출 시 copy elision이 이뤄지지 않는 게 아니다.
+            get_object(true)는 prvalue이므로, copy elision이 이뤄진다.
+
+            즉, 애초에 NRVO의 여부는 외부에서의 copy elision과는 별개이다.
+            c++17 이후에서는 copy elision이 보장되므로 o의 주소가 get_object 함수의 hidden parameter로 전달되고,
+            반환값 스택 공간 혹은 레지스터가 o의 주소로 이용될 것이다.
+
+            다만 함수 내부의 지역 변수 또한 o의 주소(즉 반환값 공간)를 이용할지 말지는 NRVO가 수행됨에 달려있다는 것이다.
+    
+        결론적으로, 함수가 포인터 형태로 1급 객체로서 다뤄질 수 있으므로
+            함수의 spec에 따른 컴파일이 일관되어야 하고, 특히 호출 시 prvalue를 생성하는 모든 함수는 RVO/NRVO와 같은 최적화와는 별개로
+            copy elision을 위한 hidden parameter가 컴파일 시 생성되어야 한다.
+
+    2. 기타 (보장되지 않는 경우)
+
+        이건 나중에 찾아보자.
+
+    
     
 
 C++의 가상 함수, 가상 상속

@@ -1,14 +1,23 @@
-import { math module1 module2 }
+import [math module module2]
 
-static function fun(i32, i32) i32
 
-const MAX i32
+static func fun(i32, i32) i32
+
+const MAX i32 = 10
 
 static array [i32; 5]
 
 static _2d_array [[i32; 5]; 4]
 
+fun add(i32, i32) i32 {
+
+}
+
 struct Person {
     name string
     age i32
 }
+
+
+
+trait Movable<T: Movable

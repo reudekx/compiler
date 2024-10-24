@@ -1,0 +1,32 @@
+import math
+import [module1 module2]
+
+const int MAX = 100
+
+static int count = 0
+
+static void(i32, i32) function
+
+void add(i32 a, i32 b) {
+    return a + b
+}
+
+struct Person {
+    i32 age
+    string name
+}
+
+impl Person {
+    
+}
+
+trait Movable {
+    void move(&self, )
+}
+
+
+trait Movable<T impl > {
+
+}
+
+
