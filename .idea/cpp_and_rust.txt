@@ -193,10 +193,35 @@ C++의 가상 함수, 가상 상속
     (뇌피셜로 쓴 게 많아서 추후 검증 필요)
 
 
+C++ 완벽한 전달 (perfect fowarding)
+
 Rust의 trait
 
     1. 정적 디스패치
         제네릭과 impl trait(단일 trait 바운드 제네릭으로 간주할 수 있다)
 
     2. 동적 디스패치
-        dyn trait
+        dyn Trait
+
+        -> vTable을 이용하여 동적 디스패치를 수행함.
+
+        dyn Trait로 사용될 수 있는 Trait는 object-safe해야 함.
+
+        예를 들어, Self를 반환하는 함수가 있는 Trait는 dyn 객체로 사용할 수 없음. 함수 spec이 구현마다 달라지기 때문.
+
+Rust의 연관 타입
+
+    연관 타입을 사용하는 이유
+        -> 연관 타입을 이용한 Trait는 (Generics를 사용하지 않았다는 가정 하에) 하나의 타입에 대해 하나의 구현만 존재함.
+
+    예를 들어서,
+
+        trait Iterator {
+            type Item;
+            fn next(&mut self) -> Option<Self::Item>;
+        }
+
+        위를 Vec<i32>와 같은 타입에 대해 구현하게 되면, Iterator가 Generic 타입이 아니므로 Vec<i32>에 대해 
+            하나의 구현만이 존재하게 되고 이때 Item을 i32로 지정해주면 된다.
+
+        물론, 예를 들어 i32를 문자열 형태로 반환하는 반복자를 구현하고 싶을 수도 있음.. 이때는 Generic 타입으로 Iterator를 정의
