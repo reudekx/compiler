@@ -60,7 +60,7 @@ C++의 lvalue, prvalue, xvalue, glvalue, rvalue
         identity를 가지고, move될 수 있다.
 
     3. prvalue
-        identity를 가지지 않고, move될 수 있다.
+        identity를 가지지 않고, move될 수 있다.  -> 잘못됨. C++ 17이후부터는 복사 생략때문에 move조차 일어나지 않는다고 함.. (검증 필요)
 
     모든 value는 이상의 3가지 중 하나에 속하게 된다.
 
